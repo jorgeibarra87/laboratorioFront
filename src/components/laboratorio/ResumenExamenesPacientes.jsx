@@ -26,7 +26,7 @@ export default function ResumenExamenesPacientes() {
       {/* CONTENIDO SEGÚN TAB */}
       {tab === "actuales" && (
         <div className="space-y-6">
-          <TblExamenesPaciente tipo="muy_urgentes" titulo="Pacientes con Exámenes Muy Urgentes" />
+          <TblExamenesPaciente tipo="muy urgentes" titulo="Pacientes con Exámenes Muy Urgentes" />
           <TblExamenesPaciente tipo="urgentes" titulo="Pacientes con Exámenes Urgentes" />
           <TblExamenesPaciente tipo="rutinarios" titulo="Pacientes con Exámenes Rutinarios" />
           <TblExamenesPaciente tipo="prioritarios" titulo="Pacientes con Exámenes Prioritarios" />

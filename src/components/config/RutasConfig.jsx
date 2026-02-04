@@ -27,6 +27,7 @@ import ReferenciaTable from '../referenciaContrareferencia/tables/ReferenciaTabl
 import HospitalTableRefContraRef from '../referenciaContrareferencia/tables/HospitalTableRefContraRef';
 import TurnosMainLayout from '../TurnosApp/TurnosMainLayout';
 import ResumenExamenesPacientes from '../laboratorio/ResumenExamenesPacientes';
+import Peticion from '../peticion/Peticion';
 
 export default function RutasConfig() {
 
@@ -83,6 +84,10 @@ export default function RutasConfig() {
                             <Sidebar componente={UpdateInnProduc} />
                         </ProtectedWithIdle>
                     </RequireAuth>} />
+                </Route>
+                <Route path='/peticion'>
+                    <Route path='peticion' element={<RequireAuth isLogged={isLogged} loading={loading}> <Sidebar componente={Peticion} /></RequireAuth>} />
+                    <Route path='' element={<RequireAuth isLogged={isLogged} loading={loading}> <Sidebar componente={Peticion} /></RequireAuth>} />
                 </Route>
                 <Route path='/asginacioncamas'>
                     <Route path='solicitud' element={<RequireAuth isLogged={isLogged} loading={loading}> <Sidebar componente={SolicitudCama} /></RequireAuth>} />

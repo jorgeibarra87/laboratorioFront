@@ -14,7 +14,7 @@ export default function TblExamenesPaciente({ tipo, titulo }) {
 
     const [page, setPage] = useState(0);
     const [checkedItems, setCheckedItems] = useState({});
-    const colorHeaderMap = { muy_urgentes: "bg-red-700", urgentes: "bg-red-500", prioritarios: "bg-yellow-500", rutinarios: "bg-green-600" };
+    const colorHeaderMap = { "muy urgentes": "bg-red-700", urgentes: "bg-red-500", prioritarios: "bg-yellow-500", rutinarios: "bg-green-600" };
     // Tamaño de texto de la tabla
     const [fontSize, setFontSize] = useState(10); // por defecto pequeño
     // Funciones para ajustar tamaño
