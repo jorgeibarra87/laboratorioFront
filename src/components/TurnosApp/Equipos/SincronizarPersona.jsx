@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import axios from "axios";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUserPlus, faSearch, faSave, faTimes, faUser, faArrowLeft, faCheckCircle, faExclamationCircle } from '@fortawesome/free-solid-svg-icons';
 import { personasService, personasTitulosService } from '../../../api/turnos/apiPersonasService';
@@ -140,10 +141,10 @@ export default function SincronizarPersona({ onClose, onPersonaSincronizada }) {
         setDatosPersona(null);
 
         try {
-            const response = await apiClienteDinamica.get(`genusuario/informacionCompleta/${documento.trim()}`);
-                 
+            //const response = await apiClienteDinamica.get(`genusuario/informacionCompleta/${documento.trim()}`);
+
             // Verificar si la respuesta es exitosa
-            if (!response.ok) {
+            /* if (!response.ok) {
                 if (response.status === 404) {
                     throw new Error('No se encontraron datos para este documento');
                 } else if (response.status >= 500) {
@@ -151,10 +152,21 @@ export default function SincronizarPersona({ onClose, onPersonaSincronizada }) {
                 } else {
                     throw new Error(`Error en la consulta: ${response.status}`);
                 }
-            }
+            } */
+
+            const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NzA2OTY0MCIsImF1dGhvcml0aWVzIjoiUk9MRV9BRE1JTklTVFJBRE9SIiwibmFtZV91c2VyIjoiSk9SR0UgQVJNQU5ETyBJQkFSUkEgUEFMQUNJT1MiLCJpYXQiOjE3NzAyMzU2NDUsImV4cCI6MTc3MDI1NzI0NX0.0xGKW3l5BO5Fy00RWLiYxFWROyGWpEpsdiEWZwTrTEw";
+            const response = await axios.get(
+                `http://optimus:8111/genusuario/informacionCompleta/${documento}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            );
 
             // Convertir respuesta a JSON
-            const data = await response.json();
+            //const data = await response.json();
+            const data = response.data;
 
             // Adaptar los datos
             const datosAdaptados = {
