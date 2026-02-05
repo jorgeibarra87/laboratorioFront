@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import usePacientesPorPrioridad from '../../../hooks/laboratorio/usePacientesPorPrioridad';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faDatabase, faFlask, faSync, faPaperPlane, faBroom } from '@fortawesome/free-solid-svg-icons';
+import { faDatabase, faFlask, faSync, faPaperPlane, faBroom, faPrint } from '@fortawesome/free-solid-svg-icons';
 import Pagination from '../../Pagination';
 import useSaveExamenTomados from '../../../hooks/laboratorio/useSaveExamenTomados';
+import { obtenerExamenesTomadosPorIngresos } from '../../../api/laboratorio/examenesService';
 import { toast } from 'react-toastify';
 
 
@@ -14,6 +15,10 @@ export default function TblExamenesPaciente({ tipo, titulo }) {
 
     const [page, setPage] = useState(0);
     const [checkedItems, setCheckedItems] = useState({});
+    // Estado para exámenes tomados desde backend
+    const [examenesTomados, setExamenesTomados] = useState([]);
+    const [loadingTomados, setLoadingTomados] = useState(false);
+
     const colorHeaderMap = { "muy urgentes": "bg-red-700", urgentes: "bg-red-500", prioritarios: "bg-yellow-500", rutinarios: "bg-green-600" };
     // Tamaño de texto de la tabla
     const [fontSize, setFontSize] = useState(10); // por defecto pequeño
@@ -61,6 +66,71 @@ export default function TblExamenesPaciente({ tipo, titulo }) {
         window.removeEventListener("mouseup", stopResizing);
     };
 
+    // Cargar exámenes tomados desde backend
+    useEffect(() => {
+        const cargarExamenesTomados = async () => {
+            if (!data?.content || data.content.length === 0) {
+                setExamenesTomados([]);
+                return;
+            }
+
+            try {
+                setLoadingTomados(true);
+
+                const ingresos = [...new Set(data.content.map(p => String(p.ingreso)))];
+
+                //console.log('Ingresos a consultar (strings):', ingresos);
+
+                if (ingresos.length === 0) {
+                    console.warn('No hay ingresos válidos para consultar');
+                    setExamenesTomados([]);
+                    return;
+                }
+
+                const response = await obtenerExamenesTomadosPorIngresos(ingresos);
+                setExamenesTomados(response || []);
+
+                //console.log('Exámenes tomados cargados:', response?.length || 0);
+            } catch (error) {
+                console.error('Error cargando exámenes tomados:', error);
+
+                // detalle del error
+                if (error.response) {
+                    console.error('Error del servidor:', error.response.data);
+                    console.error('Status:', error.response.status);
+                }
+
+                // Continuar sin filtrado
+                setExamenesTomados([]);
+                console.warn('Continuando sin filtrado de exámenes tomados');
+            } finally {
+                setLoadingTomados(false);
+            }
+        };
+
+        cargarExamenesTomados();
+    }, [data?.content]);
+
+    // Función para verificar si un examen ya fue tomado
+    const estaExamenTomado = (paciente, examen) => {
+        return examenesTomados.some(tomado =>
+            tomado.documento === paciente.documento &&
+            tomado.folio === examen.folio.toString() &&
+            tomado.descCups?.trim().toLowerCase() === examen.descProcedimiento?.trim().toLowerCase()
+        );
+    };
+
+    // Función para filtrar pacientes y sus exámenes (oculta los tomados automáticamente)
+    const filtrarExamenesNoTomados = (pacientes) => {
+        if (!pacientes) return [];
+
+        return pacientes.map(paciente => ({
+            ...paciente,
+            examenes: paciente.examenes.filter(examen => !estaExamenTomado(paciente, examen))
+        }))
+            .filter(p => p.examenes.length > 0); // Eliminar pacientes sin exámenes pendientes
+    };
+
     useEffect(() => {
         if (!loadingSave) return;
         toast.info("Guardando exámenes tomados...");
@@ -90,10 +160,12 @@ export default function TblExamenesPaciente({ tipo, titulo }) {
         });
     };
 
-    const handleEnviarSeleccionados = () => {
+    const handleEnviarSeleccionados = async () => {
         if (!data?.content) return;
         const seleccionados = [];
-        data.content.forEach((p) => {
+
+        // Usar pacientesFiltrados
+        pacientesFiltrados.forEach((p) => {
             p.examenes.forEach((ex, idxExamen) => {
                 const key = `${p.documento}-${ex.folio}-${idxExamen}`;
                 if (checkedItems[key]) {
@@ -119,14 +191,19 @@ export default function TblExamenesPaciente({ tipo, titulo }) {
                 }
             });
         });
-        saveExamenTomado(seleccionados);
+
+        await saveExamenTomado(seleccionados);
         desmarcarTodos();
-        fetchData(tipo, page);
+        // Recargar datos
+        await fetchData(tipo, page);
     };
 
     const desmarcarTodos = () => {
         setCheckedItems({});
     };
+
+    // Aplicar filtro automáticamente
+    const pacientesFiltrados = filtrarExamenesNoTomados(data?.content);
 
     const totalSeleccionados = Object.values(checkedItems).filter(Boolean).length;
 
@@ -148,6 +225,10 @@ export default function TblExamenesPaciente({ tipo, titulo }) {
                         <span>{titulo}</span>
                     </div>
                     <div className="flex items-center space-x-2">
+                        <button onClick={""} disabled={loadingData} className="flex items-center space-x-1 bg-white/20 hover:bg-white/30 px-2 py-1 rounded text-sm transition-colors" >
+                            <FontAwesomeIcon icon={faPrint} className="w-4 h-4 text-white" />
+                            <span>Sticker</span>
+                        </button>
                         {/* Contador */}
                         <span className="bg-white/20 px-3 py-1 rounded text-sm">
                             Seleccionados: <b>{totalSeleccionados}</b>
@@ -211,7 +292,7 @@ export default function TblExamenesPaciente({ tipo, titulo }) {
                                     </td>
                                 </tr>
                             ) : (
-                                data?.content?.map((p, index) => {
+                                pacientesFiltrados?.map((p, index) => {
                                     const count = p.examenes?.length ?? 0;
                                     if (count === 0) return null;
                                     const isOddGroup = index % 2 !== 0;

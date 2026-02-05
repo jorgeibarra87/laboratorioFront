@@ -2,7 +2,7 @@ import apiClienteLaboratorio from "./apiClienteLaboratorio";
 
 export const obtenerExamenesTomadosPorIngresos = async (ingresos) => {
     try {
-        const response = await apiClienteLaboratorio.post(`examenes-tomados/`, { ingresos });
+        const response = await apiClienteLaboratorio.post(`examenes-tomados/obtener-por-ingresos`, ingresos);
         return response.data;
     } catch (error) {
         console.error('Error al obtener los examenes tomados por ingresos desde laboratorio microservice', error);
