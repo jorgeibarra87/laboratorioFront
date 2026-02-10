@@ -207,6 +207,74 @@ export default function TblExamenesPaciente({ tipo, titulo }) {
 
     const totalSeleccionados = Object.values(checkedItems).filter(Boolean).length;
 
+    const handleImprimirStickers = async () => {
+        if (!data?.content) {
+            toast.error("No hay pacientes cargados");
+            return;
+        }
+
+        const seleccionados = [];
+        pacientesFiltrados.forEach((p) => {
+            p.examenes.forEach((ex, idxExamen) => {
+                const key = `${p.documento}-${ex.folio}-${idxExamen}`;
+                if (checkedItems[key]) {
+                    seleccionados.push({
+                        documento: p.documento,
+                        nomPaciente: p.nomPaciente,
+                        folio: ex.folio.toString(),
+                        codCups: ex.codCups,
+                        descProcedimiento: ex.descProcedimiento,
+                        codCama: ex.codCama,
+                        cama: ex.cama,
+                        sexo: p.sexo,
+                        edad: p.edad,
+                        servicio: ex.areaSolicitante || "LABORATORIO",
+                        prioridad: tipo
+                    });
+                }
+            });
+        });
+
+        if (seleccionados.length === 0) {
+            toast.warning("Selecciona al menos un examen");
+            return;
+        }
+
+        try {
+            toast.info(`Generando ${seleccionados.length} sticker(s)...`);
+
+            const response = await fetch('http://localhost:8084/reportes/stickers-pdf', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(seleccionados),
+            });
+
+            if (!response.ok) {
+                throw new Error(`Error: ${response.statusText}`);
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `stickers-${new Date().toISOString().split('T')[0]}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+
+            toast.success('Stickers generados correctamente');
+            desmarcarTodos();
+        } catch (error) {
+            console.error('Error:', error);
+            toast.error('Error al generar stickers: ' + error.message);
+        }
+    };
+
+
+
     if (error || saveError) return <div className='alert alert-danger'>Error: {error?.message || saveError?.message}</div>;
 
     return (
@@ -225,9 +293,9 @@ export default function TblExamenesPaciente({ tipo, titulo }) {
                         <span>{titulo}</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                        <button onClick={""} disabled={loadingData} className="flex items-center space-x-1 bg-white/20 hover:bg-white/30 px-2 py-1 rounded text-sm transition-colors" >
+                        <button onClick={handleImprimirStickers} disabled={loadingData} className="flex items-center space-x-1 bg-white/20 hover:bg-white/30 px-2 py-1 rounded text-sm transition-colors" >
                             <FontAwesomeIcon icon={faPrint} className="w-4 h-4 text-white" />
-                            <span>Sticker</span>
+                            <span>Stickers</span>
                         </button>
                         {/* Contador */}
                         <span className="bg-white/20 px-3 py-1 rounded text-sm">
