@@ -33,4 +33,31 @@ export const obtenerExamenesTomadosPageble = async (page, size) => {
         console.error('Error al obtener los examenes tomados pageable desde laboratorio microservice', error);
         throw error;
     }
+
+};
+
+export const guardarExamenesImpresion = async (examenesTomados) => {
+    try {
+        console.log('📄 Guardando impresión:', examenesTomados);
+        const response = await apiClienteLaboratorio.post(
+            `examenes-tomados/guardar-impresion`,
+            examenesTomados
+        );
+        console.log('✅ Guardado OK:', response.data);
+        return response.data;
+    } catch (error) {
+        console.error('❌ Error guardar-impresion:', error);
+        throw error;
+    }
+};
+
+
+export const actualizarExamenesTomados = async (examenesTomados) => {
+    try {
+        const response = await apiClienteLaboratorio.post(`examenes-tomados/actualizar`, examenesTomados);
+        return response.data;
+    } catch (error) {
+        console.error('Error al actualizar exámenes tomados', error);
+        throw error;
+    }
 };

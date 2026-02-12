@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faDatabase, faFlask, faSync, faPaperPlane, faBroom, faPrint } from '@fortawesome/free-solid-svg-icons';
 import Pagination from '../../Pagination';
 import useSaveExamenTomados from '../../../hooks/laboratorio/useSaveExamenTomados';
-import { obtenerExamenesTomadosPorIngresos } from '../../../api/laboratorio/examenesService';
+import { obtenerExamenesTomadosPorIngresos, guardarExamenesImpresion, actualizarExamenesTomados } from '../../../api/laboratorio/examenesService';
 import { toast } from 'react-toastify';
 
 
@@ -164,39 +164,35 @@ export default function TblExamenesPaciente({ tipo, titulo }) {
         if (!data?.content) return;
         const seleccionados = [];
 
-        // Usar pacientesFiltrados
         pacientesFiltrados.forEach((p) => {
             p.examenes.forEach((ex, idxExamen) => {
                 const key = `${p.documento}-${ex.folio}-${idxExamen}`;
                 if (checkedItems[key]) {
                     seleccionados.push({
                         documento: p.documento,
-                        nomPaciente: p.nomPaciente,
-                        sexo: p.sexo,
-                        edad: p.edad,
                         folio: ex.folio.toString(),
-                        ingreso: p.ingreso,
-                        codCups: ex.codCups,
-                        descProcedimiento: ex.descProcedimiento,
-                        observaciones: ex.observaciones,
-                        codCama: ex.codCama,
-                        cama: ex.cama,
-                        diaCodigo: p.diaCodigo,
-                        diaNombre: p.diaNombre,
-                        tiposAislamiento: p.tiposAislamiento,
-                        fechaSolicitudFolio: ex.fechaFolioSolicitud,
-                        areaSolicitante: ex.areaSolicitante,
-                        prioridad: tipo
+                        descProcedimiento: ex.descProcedimiento
                     });
                 }
             });
         });
 
-        await saveExamenTomado(seleccionados);
-        desmarcarTodos();
-        // Recargar datos
-        await fetchData(tipo, page);
+        if (seleccionados.length === 0) {
+            toast.warning("Selecciona al menos un examen");
+            return;
+        }
+
+        try {
+            await actualizarExamenesTomados(seleccionados);
+            toast.success('Exámenes marcados como tomados');
+            desmarcarTodos();
+            await fetchData(tipo, page);
+        } catch (error) {
+            console.error('Error:', error);
+            toast.error('Error al actualizar exámenes');
+        }
     };
+
 
     const desmarcarTodos = () => {
         setCheckedItems({});
@@ -220,16 +216,23 @@ export default function TblExamenesPaciente({ tipo, titulo }) {
                 if (checkedItems[key]) {
                     seleccionados.push({
                         documento: p.documento,
+                        historia: p.documento,
                         nomPaciente: p.nomPaciente,
-                        folio: ex.folio.toString(),
-                        codCups: ex.codCups,
-                        descProcedimiento: ex.descProcedimiento,
-                        codCama: ex.codCama,
-                        cama: ex.cama,
                         sexo: p.sexo,
                         edad: p.edad,
-                        servicio: ex.areaSolicitante || "LABORATORIO",
-                        prioridad: tipo
+                        numeroFolio: ex.folio.toString(),
+                        numeroIngreso: p.ingreso.toString(),
+                        codCups: ex.codCups,
+                        descCups: ex.descProcedimiento,
+                        observaciones: ex.observaciones,
+                        codCama: ex.codCama,
+                        cama: ex.cama,
+                        diaCodigo: p.diaCodigo,
+                        diaNombre: p.diaNombre,
+                        tiposAislamiento: p.tiposAislamiento,
+                        fechaSolicitudFolio: ex.fechaFolioSolicitud,
+                        areaSolicitante: ex.areaSolicitante,
+                        prioridad: tipo,
                     });
                 }
             });
@@ -242,6 +245,7 @@ export default function TblExamenesPaciente({ tipo, titulo }) {
 
         try {
             toast.info(`Generando ${seleccionados.length} sticker(s)...`);
+            await guardarExamenesImpresion(seleccionados);
 
             const response = await fetch('http://localhost:8084/reportes/stickers-pdf', {
                 method: 'POST',
@@ -265,15 +269,14 @@ export default function TblExamenesPaciente({ tipo, titulo }) {
             document.body.removeChild(link);
             window.URL.revokeObjectURL(url);
 
-            toast.success('Stickers generados correctamente');
+            toast.success('Stickers generados y guardados correctamente');
             desmarcarTodos();
+            await fetchData(tipo, page); // Recargar datos
         } catch (error) {
             console.error('Error:', error);
             toast.error('Error al generar stickers: ' + error.message);
         }
     };
-
-
 
     if (error || saveError) return <div className='alert alert-danger'>Error: {error?.message || saveError?.message}</div>;
 

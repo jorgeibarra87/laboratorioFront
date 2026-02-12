@@ -41,8 +41,9 @@ function TblExamenesTomados() {
                                 <th className="px-2 py-0.5 font-semibold">Fechas Solicitud</th>
                                 <th className="px-2 py-0.5 font-semibold">Área Sol.</th>
                                 <th className="px-2 py-0.5 font-semibold">Prioridad</th>
+                                <th className="px-2 py-0.5 font-semibold">Fecha Impresión</th>
                                 <th className="px-2 py-0.5 font-semibold">Fecha Tomado</th>
-                                <th className="px-2 py-0.5 font-semibold">Tomado Por</th>
+                                {/* <th className="px-2 py-0.5 font-semibold">Tomado Por</th> */}
                             </tr>
                         </thead>
 
@@ -71,8 +72,14 @@ function TblExamenesTomados() {
                                         <td className="border-r px-1 py-0.5">{new Date(p.fechaSolicitudFolio).toLocaleString()}</td>
                                         <td className="border-r px-1 py-0.5">{p.areaSolicitante}</td>
                                         <td className="border-r px-1 py-0.5">{p.prioridad}</td>
+                                        <td className="border-r px-1 py-0.5">
+                                            {p.fechaImpresionSticker ?
+                                                new Date(p.fechaImpresionSticker).toLocaleString() :
+                                                'N/A'
+                                            }
+                                        </td>
                                         <td className="border-r px-1 py-0.5">{new Date(p.fechaTomado).toLocaleString()}</td>
-                                        <td className="border-r px-1 py-0.5">{p.tomadoPor}</td>
+                                        {/* <td className="border-r px-1 py-0.5">{p.tomadoPor}</td> */}
                                     </tr>
                                 ))
                             )}
